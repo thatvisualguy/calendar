@@ -3,10 +3,13 @@ const params = new URLSearchParams(window.location.search);
 const monthsToShow = parseInt(params.get("months")) || 1;
 const colors = {};
 
-// Parse colors from URL
-params.forEach((value, key) => {
-    if (/^\d{4}-\d{2}-\d{2}$/.test(key)) { // Matches YYYY-MM-DD format
-        colors[key] = value;
+// Parse color-coded dates from URL
+["red", "yellow"].forEach(color => {
+    const dates = params.get(color);
+    if (dates) {
+        dates.split(",").forEach(date => {
+            colors[date] = color;
+        });
     }
 });
 
@@ -20,7 +23,7 @@ function generateCalendar(months) {
         const currentMonth = new Date(today.getFullYear(), today.getMonth() + i, 1);
         const monthDiv = document.createElement("div");
         monthDiv.classList.add("calendar");
-        
+
         // Month title
         const monthTitle = document.createElement("h2");
         monthTitle.textContent = currentMonth.toLocaleString("default", { month: "long", year: "numeric" });
@@ -44,7 +47,7 @@ function generateCalendar(months) {
             const dayDiv = document.createElement("div");
             dayDiv.classList.add("day");
             dayDiv.textContent = currentMonth.getDate();
-            
+
             const dateStr = currentMonth.toISOString().split("T")[0]; // YYYY-MM-DD
             if (colors[dateStr]) {
                 dayDiv.style.backgroundColor = colors[dateStr];
@@ -56,6 +59,17 @@ function generateCalendar(months) {
 
         container.appendChild(monthDiv);
     }
+}
+
+// Function to capture and download the calendar as an image
+function downloadImage() {
+    const container = document.getElementById("calendarContainer");
+    html2canvas(container).then(canvas => {
+        const link = document.createElement("a");
+        link.download = "calendar.png";
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+    });
 }
 
 // Run the function
