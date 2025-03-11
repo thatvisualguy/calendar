@@ -3,20 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customizable Calendar</title>
+    <title>Calendar Image</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; background-color: #f8f8f8; }
-        .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; width: 90%; max-width: 600px; margin: 20px auto; background: white; padding: 10px; border-radius: 10px; box-shadow: 0px 4px 10px rgba(0,0,0,0.1); }
+        .calendar-container { position: absolute; top: -9999px; left: -9999px; } /* Hide HTML calendar */
+        .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; width: 600px; background: white; padding: 10px; border-radius: 10px; box-shadow: 0px 4px 10px rgba(0,0,0,0.1); }
         .day { padding: 10px; border: 1px solid #ccc; text-align: center; border-radius: 5px; min-height: 40px; }
         .header { font-weight: bold; background-color: #ddd; padding: 10px; }
-        button { margin-top: 20px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
+        #calendarImage { margin-top: 20px; border: 2px solid #ccc; border-radius: 10px; box-shadow: 2px 2px 10px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
-    <h1>Customizable Calendar</h1>
-    <div id="calendarContainer"></div>
-    <button onclick="downloadImage()">Download Calendar as Image</button>
-    <script src="script.js"></script>
+    <h1>Calendar as Image</h1>
+    
+    <!-- Hidden HTML Calendar -->
+    <div id="calendarContainer" class="calendar-container"></div>
+
+    <!-- Display the Generated Image -->
+    <img id="calendarImage" alt="Generated Calendar" />
+
+    <script>
+        // Read URL parameters
+        const params = new URLSearchParams(window.location.search);
+        const monthsToShow = parseInt(params.get("months")) || 1;
+        const colors = {};
+
+        // Parse color-coded dates from URL
+        ["red", "yellow"].forEach(color => {
+            const dates = params.get(color);
+            if (dates) {
+                dates.split(",").forEach(date => {
+                    colors[date] = color;
+                });
+            }
+        });
+
+        // Function to generate the calendar
+        function generateCalendar(months) {
+            const container = document.getElementById("calendarContainer");
+            container.innerHTML = ""; // Clear previous content
+
+            const today = new Date();
+            for (let i = 0; i < months; i++) {
+                const currentMonth = new Date(today.getFullYear(), today.getMonth() + i, 1);
+                const monthDiv = document.createElement("div");
+                monthDiv.classList.add("calendar");
+
+                // Month title
+                const monthTitle = document.createElement("h2");
+                monthTitle.textContent = currentMonth.toLocaleString("default", { month: "long", year: "numeric" });
+                container.appendChild(monthTitle);
+
+                // Days of the week
+                ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].forEach(day => {
+                    const header = document.createElement("div");
+                    header.classList.add("header");
+                    header.textContent = day;
+                    monthDiv.appendChild(header);
+                });
+
+                // Empty slots before the first day
+                for (let j = 0; j < currentMonth.getDay(); j++) {
+                    monthDiv.appendChild(document.createElement("div"));
+                }
+
+                // Populate days
+                while (currentMonth.getMonth() === today.getMonth() + i) {
+                    const dayDiv = document.createElement("div");
+                    dayDiv.classList.add("day");
+                    dayDiv.textContent = currentMonth.getDate();
+
+                    const dateStr = currentMonth.toISOString().split("T")[0]; // YYYY-MM-DD
+                    if (colors[dateStr]) {
+                        dayDiv.style.backgroundColor = colors[dateStr];
+                    }
+
+                    monthDiv.appendChild(dayDiv);
+                    currentMonth.setDate(currentMonth.getDate() + 1);
+                }
+
+                container.appendChild(monthDiv);
+            }
+        }
+
+        // Function to capture and display the calendar as an image
+        function displayImage() {
+            const container = document.getElementById("calendarContainer");
+
+            // Wait for rendering, then convert to image
+            setTimeout(() => {
+                html2canvas(container, { backgroundColor: "#fff" }).then(canvas => {
+                    document.getElementById("calendarImage").src = canvas.toDataURL("image/png");
+                }).catch(error => {
+                    console.error("Error generating image:", error);
+                });
+            }, 500);
+        }
+
+        // Generate calendar and show as an image
+        generateCalendar(monthsToShow);
+        displayImage();
+    </script>
 </body>
 </html>
